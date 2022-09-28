@@ -7,3 +7,5 @@ export interface Todo{
     todo: string
     isDone: boolean
 }
+
+export const ItemId = 'todoApp'
