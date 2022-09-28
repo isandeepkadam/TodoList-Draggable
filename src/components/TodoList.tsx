@@ -1,69 +1,68 @@
-import React from 'react'
-import { Droppable } from 'react-beautiful-dnd';
-import { Todo } from '../model'
-import SingleTodoList from './SingleTodoList';
-import "./styles.css"
-interface Props{
-    todos: Todo[];
-    setTodos: React.Dispatch<React.SetStateAction<Todo[]>>
-    completedTodos:Todo[],
-    setCompletedTodos:React.Dispatch<React.SetStateAction<Todo[]>>,
+import { FunctionComponent } from "react";
+import { useDrop } from "react-dnd";
+import { ItemId, SingleTodoList, Todo } from ".";
+import "./styles.css";
+interface Props {
+  todos: Todo[];
+  setTodos: React.Dispatch<React.SetStateAction<Todo[]>>;
+  completedTodos: Todo[];
 }
 
-const TodoList: React.FC<Props> = ({todos, setTodos, completedTodos, setCompletedTodos}) => {
+const TodoList: FunctionComponent<Props> = ({
+  todos,
+  setTodos,
+  completedTodos,
+}) => {
+  const [{ isOver }, dropTodoComplete] = useDrop(() => ({
+    accept: ItemId,
+    drop(item: { tid: Number }) {
+      setTodos((todos) =>
+        todos.map((t) => (t.id == item.tid ? { ...t, isDone: true } : t))
+      );
+    },
+    collect(monitor) {
+      return {
+        isOver: !!monitor.isOver(),
+      };
+    },
+  }));
+
+  const [{ isOverActive }, dropTodoActive] = useDrop(() => ({
+    accept: "todoActive",
+    drop(item: { tid: Number }) {
+      setTodos((todos) =>
+        todos.map((t) => (t.id == item.tid ? { ...t, isDone: false } : t))
+      );
+    },
+    collect(monitor) {
+      return {
+        isOverActive: !!monitor.isOver(),
+      };
+    },
+  }));
   return (
     <div className="container">
-      <Droppable droppableId='TodosList'>
-        {
-          (provided, snapshot) => (
-            <div className={`todos ${snapshot.isDraggingOver? "dragActive" : " "}`} 
-            ref={provided.innerRef} {...provided.droppableProps}>
-      
-            <span className="todos__heading">
-              Active Tasks
-            </span> 
-            {
-              todos.map((todo, index) => (
-                  <SingleTodoList 
-                  index={index}
-                  todo={todo} 
-                  todos={todos} 
-                  key={todo.id} 
-                  setTodos={setTodos}/> 
-                  )) 
-                }
-              {provided.placeholder}
-          </div>
-          )
-        }
-      
-      </Droppable>
-      <Droppable droppableId='TodosRemove' > 
-        {
-          (provided, snapshot) => (
-            <div className={`todos remove ${snapshot.isDraggingOver ? "dragComplete": ""}`}
-              ref={provided.innerRef} {...provided.droppableProps}>
-      
-              <span className="todos__heading">
-                Completed Tasks
-              </span> 
-              {
-                completedTodos.map((todo, index) => (
-                    <SingleTodoList
-                          index={index}
-                          todo={todo} 
-                          todos={completedTodos} 
-                          key={todo.id} 
-                          setTodos={setCompletedTodos}/> 
-                ))
-              }
-              {provided.placeholder}
-            </div>
-          )
-        }
-      </Droppable>
+      <div ref={dropTodoActive}>
+        <ul className="todos__heading">Active Tasks</ul>
+        {todos.map((todo) => (
+          <li style={{ display: todo.isDone ? "none" : "block" }} key={todo.id}>
+            <SingleTodoList todo={todo} dropType={ItemId} setTodos={setTodos} />
+          </li>
+        ))}
+      </div>
+      <div ref={dropTodoComplete}>
+        <span className="todos__heading">Completed Tasks</span>
+        {completedTodos.map((todo) => (
+          <SingleTodoList
+            todo={todo}
+            dropType="todoActive"
+            key={todo.id}
+            setTodos={setTodos}
+          />
+        ))}
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export default TodoList
+export default TodoList;

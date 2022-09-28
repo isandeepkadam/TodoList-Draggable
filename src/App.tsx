@@ -1,65 +1,28 @@
-import React, { useState } from 'react';
-import './App.css';
-import { Todo } from './model';
-import InputField from './components/InputField';
-import TodoList from "./components/TodoList"
-import { DragDropContext, DropResult } from 'react-beautiful-dnd';
+import { FunctionComponent, useMemo, useState } from "react";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import "./App.css";
+import { InputField, Todo, TodoList } from "./components";
 
-const App : React.FC = () =>  {
-  
-  const [todo, setTodo] = useState<string>("")
-  const [todos, setTodos] = useState<Todo[]>([])
-  const [completedTodos, setCompletedTodos] = useState<Todo[]>([])
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if(todo){
-      setTodos([...todos, {id:Date.now(), todo:todo, isDone:false}])
-      setTodo("")
-    }
-  };
-
-  const onDragEnd = (result: DropResult) => {
-      const {source, destination} = result
-
-      if(!destination) return;
-      if(destination.droppableId === source.droppableId && 
-        destination.index === source.index) return
-      
-      let add, 
-      active = todos, 
-      complete = completedTodos;
-
-      if(source.droppableId === "TodosList"){
-        add=active[source.index];
-        active.splice(source.index, 1)
-      }else{
-        add = complete[source.index]
-        complete.splice(source.index, 1)
-      }
-
-      if(destination.droppableId === "TodosList"){
-        active.splice(destination.index, 0, add)
-      }else{
-        complete.splice(destination.index, 0, add)
-      }
-
-      setCompletedTodos(complete)
-      setTodos(active)
-  } 
+const App: FunctionComponent = () => {
+  const [todos, setTodos] = useState<Todo[]>([]);
+  // const [completedTodos, setCompletedTodos] = useState<Todo[]>([]);
+  const completedTodos = useMemo(() => todos.filter((t) => t.isDone), [todos]);
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <div className="App">
-          <span className='heading'>Manage your Tasks</span>
-          <InputField todo={todo} setTodo={setTodo} handleAdd={(e) => handleAdd(e)}/>
-          <TodoList todos={todos} setTodos={setTodos}
-                    completedTodos = {completedTodos}
-                    setCompletedTodos = {setCompletedTodos}
-          />
-      </div>
-    </DragDropContext>
+    <div className="App">
+      <span className="heading">Manage your Tasks</span>
+      <InputField setTodos={setTodos} />
+      <DndProvider backend={HTML5Backend}>
+        <TodoList
+          todos={todos}
+          setTodos={setTodos}
+          completedTodos={completedTodos}
+          // setCompletedTodos={setCompletedTodos}
+        />
+      </DndProvider>
+    </div>
   );
-}
+};
 
 export default App;
